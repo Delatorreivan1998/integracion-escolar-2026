@@ -28,3 +28,22 @@ Script desarrollado en Google Apps Script para automatizar el envío de emails a
 ---
 
 ## 📧 Flujo del sistema
+Hoja "Casos Aprobados"
+↓
+Validar email real en col F
+↓
+Enviar email con PDF adjunto
+↓
+Registrar fecha en col G ✅
+
+
+---
+
+## 🛠️ Stack
+
+`Google Apps Script` · `GmailApp` · `DriveApp` · `HTML email` · `ScriptApp Triggers`
+
+---
+
+## 👤 Autor
+Iván De la torre — [GitHub](https://github.com/Delatorreivan1998)
