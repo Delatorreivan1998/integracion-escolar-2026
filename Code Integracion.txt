@@ -1,0 +1,292 @@
+"INTEGRACION - IVAN"
+/****************************************************
+ * INTEGRACIONES 2026 - Mails Aut. Padres 2026
+ * Hoja: Casos Aprobados
+ * Email padres: Columna F
+ * Fecha envío: Columna G
+ * PDF: Instructivos para Padres  2026.pdf (Drive)
+ * Menú en Extensiones (AddonMenu) + Menú superior
+ *
+ * REGLA PEDIDA:
+ * - "Enviar pendientes (sin fecha en G)" SOLO envía si F tiene un mail real
+ * - NO envía si en F dice "E-MAIL", "E- mail", "E mail", etc.
+ ****************************************************/
+
+/***** CONFIG *****/
+const SHEET_NAME = 'Casos Aprobados';
+const EMAIL_COL  = 6; // F
+const SENT_COL   = 7; // G
+
+// Drive
+const FOLDER_ID = '1OzA4oG-tFOaigz3L1-VN-kBTbuHGemQx';
+const PDF_NAME  = 'Instructivos para Padres  2026.pdf'; // ojo: doble espacio
+
+// Mail
+const SUBJECT = 'Integracion Escolar/Asistente Externo 2026- Tratamiento Autorizado';
+const SENDER_NAME = 'Centro de Rehabilitación Integral Assistire';
+const END_EMOJI = '✅';
+
+// Colores (solo celda mail)
+const COLOR_SENDING = '#fff2cc'; // amarillo
+const COLOR_INVALID = '#f4cccc'; // rojo
+
+
+/***** CUERPO DEL MAIL (TEXTO + HTML) *****/
+const BODY_TEXT = [
+  'Estimados,',
+  '',
+  'Les informamos que el tratamiento correspondiente a Integracion Escolar/Asistente Externo al ciclo 2026 ya se encuentra autorizado.',
+  '',
+  'Les solicitamos que lean atentamente la información adjunta y, posteriormente, completen el formulario a fin de poder organizar el tratamiento para el ciclo 2026.',
+  'Se aclara que únicamente serán consideradas las respuestas consignadas en el formulario, no así las recibidas por WhatsApp ni por correo electrónico. En observaciones podran ',
+  '',
+  'Importante:',
+  'En caso de que haya hermanos con tratamiento aprobado, deberá completarse un formulario por cada paciente, utilizando direcciones de correo electrónico diferentes.',
+  '',
+  'FORMULARIO:',
+  'https://docs.google.com/forms/d/e/1FAIpQLSe1A43YKoT6igDeRz0CO5ZmwRPX_lsNU6FOWT9xYLwpkITDnA/viewform?usp=header',
+  '',
+  'Este correo es de carácter informativo. Para realizar consultas sobre esta prestacion, deberán comunicarse exclusivamente a: integraciones@assistire.com.ar',
+  '',
+  'Atentamente,',
+  'Centro de Rehabilitación Integral Assistire',
+  '',
+  'NO RESPONDER A ESTE CORREO',
+  'ES UN ENVÍO AUTOMÁTICO PARA INTEGRACION ESCOLAR/ASISTENTE EXTERNO 2026',
+  '',
+  'PARA CUALQUIER CONSULTA ESCRIBIR A: integraciones@assistire.com.ar',
+  '',
+  END_EMOJI
+].join('\n');
+
+const BODY_HTML = `
+  <p>Estimados,</p>
+
+  <p>Les informamos que el tratamiento correspondiente a Integracion Escolar/Asistente Externo al ciclo 2026 ya se encuentra autorizado.</p>
+
+  <p>
+    Les solicitamos que lean atentamente la información adjunta y, posteriormente, completen el formulario a fin de poder organizar el tratamiento para el ciclo 2026.<br>
+    Se aclara que únicamente serán consideradas las respuestas consignadas en el formulario, no así las recibidas por WhatsApp ni por correo electrónico. En observaciones podran
+  </p>
+
+  <p><b>Importante:</b><br>
+    En caso de que haya hermanos con tratamiento aprobado, deberá completarse un formulario por cada paciente, utilizando direcciones de correo electrónico diferentes.
+  </p>
+
+  <p><b>FORMULARIO:</b><br>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSe1A43YKoT6igDeRz0CO5ZmwRPX_lsNU6FOWT9xYLwpkITDnA/viewform?usp=header">
+      Completar formulario
+    </a>
+  </p>
+
+  <p>
+    Este correo es de carácter informativo. Para realizar consultas sobre esta prestacion, deberán comunicarse exclusivamente a:
+    <a href="mailto:integraciones@assistire.com.ar">integraciones@assistire.com.ar</a>
+  </p>
+
+  <p>Atentamente,<br>
+    Centro de Rehabilitación Integral Assistire
+  </p>
+
+  <p style="margin-top:16px;">
+    <b>NO RESPONDER A ESTE CORREO</b><br>
+    ES UN ENVÍO AUTOMÁTICO PARA INTEGRACION ESCOLAR/ASISTENTE EXTERNO 2026
+  </p>
+
+  <p><b>PARA CUALQUIER CONSULTA ESCRIBIR A:
+    <a href="mailto:integraciones@assistire.com.ar">integraciones@assistire.com.ar</a></b></p>
+
+  <p style="margin-top:16px; font-size:16px;"><b>${END_EMOJI}</b></p>
+`;
+
+
+/**********************
+ * MENÚ (Extensiones + Barra superior)
+ **********************/
+function buildMenu_() {
+  const ui = SpreadsheetApp.getUi();
+
+  ui.createAddonMenu()
+    .addItem('🧩 INTEGRACIONES PADRES (fila seleccionada)', 'sendMailForSelectedRow')
+    .addItem('🔁 Forzar reenvío (fila seleccionada)', 'forceResendForSelectedRow')
+    .addSeparator()
+    .addItem('📤 Enviar pendientes (sin fecha en G)', 'sendPending')
+    .addSeparator()
+    .addItem('🧷 Instalar trigger onOpen', 'installOnOpenTrigger')
+    .addItem('🧩 Mostrar menú ahora', 'mostrarMenuAhora')
+    .addToUi();
+
+  ui.createMenu('📧 Mails Aut. Padres 2026')
+    .addItem('🧩 INTEGRACIONES PADRES (fila seleccionada)', 'sendMailForSelectedRow')
+    .addItem('🔁 Forzar reenvío (fila seleccionada)', 'forceResendForSelectedRow')
+    .addSeparator()
+    .addItem('📤 Enviar pendientes', 'sendPending')
+    .addToUi();
+}
+
+function onOpen(e) { buildMenu_(); }
+function onInstall(e) { onOpen(e); }
+
+function mostrarMenuAhora() {
+  buildMenu_();
+  SpreadsheetApp.getUi().alert('Menú creado. Revisá Extensiones → Mail y/o la barra superior.');
+}
+
+
+/**********************
+ * ACCIONES
+ **********************/
+function sendMailForSelectedRow() {
+  sendForActiveRow_(false);
+}
+
+function forceResendForSelectedRow() {
+  sendForActiveRow_(true);
+}
+
+/**
+ * Usa la fila seleccionada (row del rango activo),
+ * pero siempre toma datos desde la hoja "Casos Aprobados"
+ * aunque estés parado en otra pestaña.
+ */
+function sendForActiveRow_(force) {
+  const ss = SpreadsheetApp.getActive();
+  const targetSheet = ss.getSheetByName(SHEET_NAME);
+  if (!targetSheet) {
+    SpreadsheetApp.getUi().alert('No existe la hoja "' + SHEET_NAME + '".');
+    return;
+  }
+
+  const rng = ss.getActiveRange();
+  if (!rng) {
+    SpreadsheetApp.getUi().alert('Seleccioná una celda en la fila que querés enviar.');
+    return;
+  }
+
+  const row = rng.getRow();
+  if (row < 2) return;
+
+  sendForRow_(targetSheet, row, force);
+}
+
+/**
+ * Pendientes: SOLO envía si:
+ * - G está vacío
+ * - F es un mail real (ej. pepito@gmail.com)
+ * - y NO es "E-MAIL" / "E- mail" / "E mail" etc.
+ *
+ * Importante: si F no es mail real, NO envía y NO pinta nada.
+ */
+function sendPending() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) throw new Error('No existe la hoja: ' + SHEET_NAME);
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return;
+
+  for (let row = 2; row <= lastRow; row++) {
+    const alreadySent = sh.getRange(row, SENT_COL).getValue();
+    if (alreadySent) continue; // ya tiene fecha en G
+
+    const rawEmail = String(sh.getRange(row, EMAIL_COL).getValue() || '').trim();
+
+    // Saltea placeholders tipo "E-MAIL" y cualquier cosa que no sea un email real
+    if (!isRealEmail_(rawEmail)) continue;
+
+    sendForRow_(sh, row, false);
+    Utilities.sleep(600);
+  }
+}
+
+
+/**********************
+ * PDF
+ **********************/
+function getPdfBlob_() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+
+  let files = folder.getFilesByName(PDF_NAME);
+  if (files.hasNext()) return files.next().getBlob().setName(PDF_NAME);
+
+  // fallback: normaliza espacios para evitar fallos por doble/tri espacios
+  files = folder.getFiles();
+  const target = PDF_NAME.replace(/\s+/g, ' ').trim();
+  while (files.hasNext()) {
+    const f = files.next();
+    const nameNorm = f.getName().replace(/\s+/g, ' ').trim();
+    if (nameNorm === target) return f.getBlob().setName(f.getName());
+  }
+
+  throw new Error('No se encontró el PDF "' + PDF_NAME + '" en la carpeta indicada.');
+}
+
+
+/**********************
+ * ENVÍO (pinta SOLO celda Mail en F)
+ **********************/
+function sendForRow_(sh, row, force) {
+  const emailCell = sh.getRange(row, EMAIL_COL);
+  const rawEmail = String(emailCell.getValue() || '').trim();
+
+  const sentCell = sh.getRange(row, SENT_COL);
+  const alreadySent = sentCell.getValue();
+
+  // Si no es mail real (incluye "E-MAIL"), marcar inválido y no enviar
+  if (!isRealEmail_(rawEmail)) {
+    sentCell.setValue('Sin email válido');
+    emailCell.setBackground(COLOR_INVALID);
+    return;
+  }
+
+  if (!force && alreadySent) return;
+
+  // Amarillo (queda amarillo como pediste)
+  emailCell.setBackground(COLOR_SENDING);
+
+  const pdfBlob = getPdfBlob_();
+
+  GmailApp.sendEmail(rawEmail, SUBJECT, BODY_TEXT, {
+    htmlBody: BODY_HTML,
+    attachments: [pdfBlob],
+    name: SENDER_NAME
+  });
+
+  // Fecha en G
+  sentCell.setValue(new Date());
+}
+
+
+/**********************
+ * VALIDACIÓN: MAIL REAL (bloquea "E-MAIL")
+ **********************/
+function isRealEmail_(value) {
+  if (!value) return false;
+
+  const v = String(value).trim();
+  if (!v) return false;
+
+  // Normaliza para detectar placeholders: "E-MAIL", "E mail", "E_mail", etc.
+  const normalized = v.toLowerCase().replace(/\s+/g, '').replace(/[\-_.]/g, '');
+  if (normalized === 'email') return false;
+
+  // Validación práctica de email real
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+
+/**********************
+ * TRIGGER INSTALABLE onOpen
+ **********************/
+function installOnOpenTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'onOpen')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('onOpen')
+    .forSpreadsheet(SpreadsheetApp.getActive())
+    .onOpen()
+    .create();
+
+  SpreadsheetApp.getUi().alert('🧷 Trigger instalable onOpen creado.');
+}
