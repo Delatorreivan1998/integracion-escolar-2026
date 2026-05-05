@@ -1,7 +1,7 @@
 # integracion-escolar-2026
 Automatización de notificaciones a familias- Integración Escolar 2026 - Google Apps Script
 # 🏫 Sistema de Notificaciones - Integración Escolar 2026
-**Assistire - Centro de Rehabilitación Integral**
+**Assistire - Centro de Rehabilitación Integral (Centro)**
 
 Script desarrollado en Google Apps Script para automatizar el envío de emails a padres de pacientes con tratamiento de Integración Escolar / Asistente Externo 2026 autorizado, adjuntando el instructivo oficial en PDF desde Google Drive.
 
